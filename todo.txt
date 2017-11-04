@@ -1,0 +1,11 @@
+1. Timer
+- Pause
+- Continue
+
+2. Stopwatch
+- Start
+- Lap
+- Stop
+
+2. Metronome
+- Set bpm
