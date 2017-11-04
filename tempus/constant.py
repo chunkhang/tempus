@@ -2,4 +2,4 @@
 # Global constants 
 
 # Strings
-VERSION = '1.0.0'
+VERSION = '1.0.0dev1'
