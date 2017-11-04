@@ -6,6 +6,7 @@ setup(
 	packages = find_packages(),
 	install_requires = [
 		'click==6.7',
+		'cursor==1.1.0'
 	],
 	python_requires='>=3',
 	version = constant.VERSION,
