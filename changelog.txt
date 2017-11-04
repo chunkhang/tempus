@@ -5,8 +5,7 @@ Create distribution:
 python3 setup.py sdist bdist_wheel
 
 Upload project:
-twine upload [-r testpypi] dist/<*.tar.gz>
-twine upload [-r testpypi] dist/<*.whl>
+twine upload [-r testpypi] dist/<package version>*
 
 Test project:
 pip3 install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple <package name>

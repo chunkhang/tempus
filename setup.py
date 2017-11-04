@@ -3,7 +3,7 @@ from tempus import constant
 
 setup(
 	name = 'tempus',
-	packages = find_packages(),
+	packages = ['tempus', 'tempus.commands'],
 	install_requires = [
 		'click==6.7',
 		'cursor==1.1.0'
