@@ -20,7 +20,7 @@ setup(
 	classifiers = [
 		'Intended Audience :: End Users/Desktop',
 		'Environment :: Console',
-		'Programming Language :: Python :: 3 :: only'
+		'Programming Language :: Python :: 3 :: Only'
 	],
 	entry_points = {
 		'console_scripts': [
