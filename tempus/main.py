@@ -11,7 +11,7 @@ def cli():
 
 # Add all commands to cli
 for command in COMMANDS:
-   cli.add_command(getattr(locals()[command], 'command'))
+   cli.add_command(getattr(locals()[command], 'execute'))
 
 if __name__ == '__main__':
    cli()

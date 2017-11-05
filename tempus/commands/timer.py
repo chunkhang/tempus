@@ -8,7 +8,7 @@ DURATION_REGEX = '^(([0-9]+)m)?(([0-9]+)s)?$'
 
 @command('timer', short_help='use timer')
 @argument('duration')
-def command(duration):
+def execute(duration):
 
    # Check syntax
    if _syntax_valid(duration):
