@@ -3,6 +3,9 @@ import cursor
 import time
 import re
 import sys
+from datetime import datetime
+
+from ..utils import progress_bar
 
 DURATION_REGEX = '^(([0-9]+)m)?(([0-9]+)s)?$'
 
@@ -10,68 +13,78 @@ DURATION_REGEX = '^(([0-9]+)m)?(([0-9]+)s)?$'
 @argument('duration')
 def execute(duration):
 
-   # Check syntax
-   if _syntax_valid(duration):
-      # Check duration
-      duration = _get_duration(duration)
-      if not _duration_valid(duration):
+   duration_string = duration
+
+   # Check duration syntax
+   if _syntax_valid(duration_string):
+      # Check duration values
+      duration = _to_duration(duration_string)
+      if not _values_valid(duration):
          print('Invalid duration.')
          print('Examples: 2m59s, 40m0s, 0m10s')
-         sys.exit(0)
+         sys.exit()
    else:
       print('Invalid syntax.')
       print('Examples: 10s, 5m, 20m30s')
-      sys.exit(0)      
+      sys.exit()      
+
+
+   print(str(datetime.now()))
+   for frame in progress_bar(str(datetime.now()), complete_in=1000):
+      frame.update_info(str(datetime.now()))
+
+
    # Get total seconds
    duration = _safe_duration(duration)
    total_seconds = duration[0]*60 + duration[1]
 
-   # Countdown
-   print(_time_box(total_seconds))
-   message = 'Enter to start. Ctrl-C to stop.'
-   input(message)
-   print('', end='\r\033[4A')
-   stopped = False
-   with cursor.HiddenCursor(): 
-      for i in range(int(total_seconds), 0, -1):
-         try:
-            print(_time_box(i))
-            print(' '*len(message))
-            time.sleep(1)
-         except KeyboardInterrupt:
-            stopped = True
-            break
-         finally:
-            print('', end='\r\033[4A')
-   # Done countdown
-   if not stopped:  
-      print(_time_box(0))
-      _notify()
-   else:
-       print('\n'*2)
-   print('Stopped.'+' '*len(message))
+   # # Countdown
+   # print(_time_box(total_seconds))
+   # message = 'Enter to start. Ctrl-C to stop.'
+   # input(message)
+   # print('', end='\r\033[4A')
+   # stopped = False
+   # with cursor.HiddenCursor(): 
+   #    for i in range(int(total_seconds), 0, -1):
+   #       try:
+   #          print(_time_box(i))
+   #          print(' '*len(message))
+   #          time.sleep(1)
+   #       except KeyboardInterrupt:
+   #          stopped = True
+   #          break
+   #       finally:
+   #          print('', end='\r\033[4A')
+   # # Done countdown
+   # if not stopped:  
+   #    print(_time_box(0))
+   #    _notify()
+   # else:
+   #     print('\n'*2)
+   # print('Stopped.'+' '*len(message))
    
-def _syntax_valid(d, r=DURATION_REGEX):
+
+def _syntax_valid(ds, r=DURATION_REGEX):
    '''
    -> boolean: True - valid syntax
    -> boolean: False - invalid syntax
    '''
-   m = re.compile(r).match(d)
+   m = re.compile(r).match(ds)
    if m:
       return True
    else:
       return False
 
-def _get_duration(d, r=DURATION_REGEX):
+def _to_duration(ds, r=DURATION_REGEX):
    '''
    -> tuple: (int/None, int/None) - (minutes, seconds)
    '''
-   g = re.compile(r).match(d).groups()
+   g = re.compile(r).match(ds).groups()
    m = int(g[1]) if g[1] is not None else None
    s = int(g[3]) if g[3] is not None else None
    return (m, s)
 
-def _duration_valid(d):
+def _values_valid(d):
    '''
    -> boolean: True - valid duration
    -> boolean: False - invalid duration
@@ -113,18 +126,6 @@ def _time_string(total_s):
    '''
    m, s = divmod(total_s, 60)
    return '{}:{:02d}'.format(m, s)
-
-def _time_box(s):
-   '''
-   -> string
-   +-------+
-   | 12:20 |
-   +-------+
-   '''
-   string = _time_string(s)
-   return '+{}+'.format('-'*(len(string)+2))+'\n'+\
-          '| {} |'.format(string)+'\n'+\
-          '+{}+'.format('-'*(len(string)+2))
 
 def _notify():
    def _beep():

@@ -21,29 +21,29 @@ def test_invalid_syntax():
    assert timer._syntax_valid('-1m') == False
    assert timer._syntax_valid('-2s') == False
 
-def test_get_duration():
-   assert timer._get_duration('10m59s') == (10, 59)
-   assert timer._get_duration('0m0s') == (0, 0)
-   assert timer._get_duration('1m') == (1, None)
-   assert timer._get_duration('1s') == (None, 1)
-   assert timer._get_duration('') == (None, None)
+def test_to_duration():
+   assert timer._to_duration('10m59s') == (10, 59)
+   assert timer._to_duration('0m0s') == (0, 0)
+   assert timer._to_duration('1m') == (1, None)
+   assert timer._to_duration('1s') == (None, 1)
+   assert timer._to_duration('') == (None, None)
 
 def test_valid_duration():
-   assert timer._duration_valid((1, 1)) == True
-   assert timer._duration_valid((1, 0)) == True
-   assert timer._duration_valid((0, 1)) == True
-   assert timer._duration_valid((1000, 59)) == True
+   assert timer._values_valid((1, 1)) == True
+   assert timer._values_valid((1, 0)) == True
+   assert timer._values_valid((0, 1)) == True
+   assert timer._values_valid((1000, 59)) == True
    for i in range(60):
-      assert timer._duration_valid((40, i)) == True
+      assert timer._values_valid((40, i)) == True
 
 def test_invalid_duration():
-   assert timer._duration_valid((0, 0)) == False
-   assert timer._duration_valid((0, 60)) == False
-   assert timer._duration_valid((0, 61)) == False
-   assert timer._duration_valid((0, 61)) == False
-   assert timer._duration_valid((0, None)) == False
-   assert timer._duration_valid((None, 0)) == False
-   assert timer._duration_valid((None, None)) == False
+   assert timer._values_valid((0, 0)) == False
+   assert timer._values_valid((0, 60)) == False
+   assert timer._values_valid((0, 61)) == False
+   assert timer._values_valid((0, 61)) == False
+   assert timer._values_valid((0, None)) == False
+   assert timer._values_valid((None, 0)) == False
+   assert timer._values_valid((None, None)) == False
 
 def test_safe_duration():
    assert timer._safe_duration((12, 20)) == (12, 20)
