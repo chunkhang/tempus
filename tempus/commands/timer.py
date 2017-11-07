@@ -3,9 +3,9 @@ import cursor
 import time
 import re
 import sys
-from datetime import datetime
+import datetime
 
-from ..utils import progress_bar
+from ..utils import Bar
 
 DURATION_REGEX = '^(([0-9]+)m)?(([0-9]+)s)?$'
 
@@ -28,10 +28,12 @@ def execute(duration):
       print('Examples: 10s, 5m, 20m30s')
       sys.exit()      
 
+   start = datetime.datetime.now()
+   bar = Bar('Loading...', 10)
+   bar.start()
+   end = datetime.datetime.now()
+   print('Elapsed: {}'.format(end-start))
 
-   print(str(datetime.now()))
-   for frame in progress_bar(str(datetime.now()), complete_in=1000):
-      frame.update_info(str(datetime.now()))
 
 
    # Get total seconds
