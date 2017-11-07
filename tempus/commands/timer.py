@@ -29,7 +29,7 @@ def execute(duration):
       sys.exit()      
 
    start = datetime.datetime.now()
-   bar = Bar('Loading...', 10)
+   bar = Bar(10)
    bar.start()
    end = datetime.datetime.now()
    print('Elapsed: {}'.format(end-start))
@@ -122,12 +122,7 @@ def _safe_duration(d):
    m, s = divmod(total_s, 60)
    return (m, s)
 
-def _time_string(total_s):
-   '''
-   -> string - mm:ss
-   '''
-   m, s = divmod(total_s, 60)
-   return '{}:{:02d}'.format(m, s)
+
 
 def _notify():
    def _beep():

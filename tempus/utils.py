@@ -14,28 +14,32 @@ def truncate(float_number, decimal_point):
    magic_number = 10 ** decimal_point
    return math.floor(float_number*magic_number) / magic_number
 
-class Info(threading.Thread):
-   pass
 
-class Notifier(threading.Thread):
-   '''
-   Class to notify progress bar when time is up
-   '''
-   def __init__(self, duration, bar):
-      threading.Thread.__init__(self)
-      self._duration = duration
-      self._bar = bar
-
-   # Start timer
-   def run(self):
-      # Notify bar after done sleeping
-      time.sleep(self._duration)
-      self._bar.notify()
 
 class Bar(object):
    '''
    Class for progress bar
    '''
+   class Timer(threading.Thread):
+      '''
+      Class to update time remaining
+      '''
+      def __init__(self, starting_seconds):
+         threading.Thread.__init__(self)
+         self._remaining_seconds = starting_seconds
+      # Convert seconds to string
+      def _to_string(seconds):
+         m, s = divmod(seconds, 60)
+         return '{}:{:02d}'.format(m, s)
+      # Start counting down
+      def run(self):
+         while self._remaining_seconds > 0:
+            time.sleep(1)
+            self._remaining_seconds -= 1
+      # Get current time
+      def get_time(self):
+         return Bar.Timer._to_string(self._remaining_seconds)
+
    FRAME_CHAR_STAGES = {
       'block': ['\u258F', '\u258E', '\u258D', '\u258C', 
                 '\u258B', '\u258A', '\u2589', '\u2588']
@@ -43,24 +47,19 @@ class Bar(object):
    BORDER_CHAR = '|'
    REMAINING_CHAR = ' '
 
-   def __init__(self, info, complete_in, 
-      frame_char_type='block', length=80):
-      # Bar 
-      self._bar_length = length - len(info)
+   def __init__(self, duration, frame_char_type='block', length=80):
+      # Duration
+      self._total_seconds = duration
+      self._timer = Bar.Timer(duration)
+      self._time_up = False
       # Frames
-      self._total_frames = self._bar_length - 2
+      self._total_frames = length - 2 - len(self._timer.get_time())
       self._current_frame = 1
       self._frame_stack = ''
       # Stages
       frame_stages = Bar.FRAME_CHAR_STAGES[frame_char_type]
       self._stage_in_cycle = itertools.cycle(frame_stages)
       self._last_stage = frame_stages[-1]
-      # Info 
-      self._info = info
-      self._info_length = len(info)
-      # Duration
-      self._total_seconds = complete_in
-      self._time_up = False
       # Gaps (In seconds)
       stages_per_frame = len(frame_stages)
       total_gaps = self._total_frames*stages_per_frame - 1
@@ -68,21 +67,17 @@ class Bar(object):
       self._first_gap = \
          self._total_seconds - total_gaps*self._normal_gap + self._normal_gap
 
-   # Get latest info
-   def _get_info(self):
-      info = self._info[:self._info_length]
-      if len(self._info) < self._info_length:
-         info += ' '*(self._info_length-len(self._info))
-      return info
-
-   # Update info
-   def _update_info(self, info):
-      self._info = info
+   # Receive notification that time is up
+   def _notify(self):
+      self._time_up = True
 
    # Start progress bar
    def start(self):
-      # Start notifer thread
-      Notifier(self._total_seconds, self).start()
+      # Start timer thread
+      self._timer.start()
+      # Start notifier thread
+      # Notify that time is up after duration expires
+      threading.Timer(self._total_seconds, lambda: self._notify()).start()
       with cursor.HiddenCursor():
          first_stage_now = True
          remaining_frames = self._total_frames - self._current_frame
@@ -103,7 +98,7 @@ class Bar(object):
                   current_stage,
                   Bar.REMAINING_CHAR*remaining_frames,
                   Bar.BORDER_CHAR,
-                  self._get_info()), end='\r', flush=True)
+                  self._timer.get_time()), end='\r', flush=True)
                # Update frame stack when the current frame is complete
                # Move on to next frame
                if current_stage == self._last_stage:
@@ -116,10 +111,6 @@ class Bar(object):
                   Bar.BORDER_CHAR, 
                   self._last_stage*self._total_frames,                  
                   Bar.BORDER_CHAR,
-                  self._get_info()), end='\r', flush=True)     
+                  self._timer.get_time()), end='\r', flush=True)     
                break          
          print()
-
-   # Receive notification that time is up
-   def notify(self):
-      self._time_up = True
