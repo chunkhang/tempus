@@ -3,9 +3,9 @@ import cursor
 import time
 import re
 import sys
-import datetime
 import threading
 import itertools
+import queue
 
 from ..utils import truncate
 
@@ -15,12 +15,10 @@ DURATION_REGEX = '^(([0-9]+)m)?(([0-9]+)s)?$'
 @argument('duration')
 def execute(duration):
 
-   duration_string = duration
-
    # Check duration syntax
-   if _syntax_valid(duration_string):
+   if _syntax_valid(duration):
       # Check duration values
-      duration = _to_duration(duration_string)
+      duration = _to_duration(duration)
       if not _values_valid(duration):
          print('Invalid duration.')
          print('Examples: 2m59s, 40m0s, 0m10s')
@@ -30,17 +28,10 @@ def execute(duration):
       print('Examples: 10s, 5m, 20m30s')
       sys.exit()      
 
-   start = datetime.datetime.now()
-   bar = Bar(10)
-   bar.start()
-   end = datetime.datetime.now()
-   print('Elapsed: {}'.format(end-start))
+   # Start timer bar
+   seconds = _to_seconds(duration)
+   Bar(seconds).start()
 
-
-
-   # Get total seconds
-   duration = _safe_duration(duration)
-   total_seconds = duration[0]*60 + duration[1]
 
    # # Countdown
    # print(_time_box(total_seconds))
@@ -106,38 +97,21 @@ def _values_valid(d):
    elif s is None:
       if m == 0:
          return False
-   # s only
+   # Seconds only
    elif m is None:
       if s == 0:
          return False
    return True
 
-def _safe_duration(d):
+def _to_seconds(d):
    '''
-   Duration returned is guranteed to be ints, where seconds >= 0 and < 60
-   -> tuple: (int, int) - (minutes, seconds)
+   Convert duration string to seconds
+   -> int: total seconds 
    '''
    m, s = d
    m = 0 if m is None else m
    s = 0 if s is None else s
-   total_s = m*60 + s
-   m, s = divmod(total_s, 60)
-   return (m, s)
-
-
-
-def _notify():
-   def _beep():
-      print('\a', end='', flush=True)
-   message = 'Ctrl-C to stop.'
-   print(message)
-   while True:
-      try:
-         _beep()
-         time.sleep(0.5)
-      except KeyboardInterrupt:
-         print('', end='\r\033[1A')
-         break
+   return m*60 + s
 
 class Bar(object):
    '''
@@ -149,21 +123,29 @@ class Bar(object):
       '''
       def __init__(self, starting_seconds):
          threading.Thread.__init__(self)
+         self._initial_length = 0
+         self._initial_length = len(self._to_string(starting_seconds))
          self._remaining_seconds = starting_seconds
       # Convert seconds to string
-      def _to_string(seconds):
+      def _to_string(self, seconds):
          m, s = divmod(seconds, 60)
-         return '{}:{:02d}'.format(m, s)
+         time_string = '{}:{:02d}'.format(m, s)
+         if self._initial_length == 0:
+            return time_string
+         else:
+            return time_string.rjust(self._initial_length)
       # Start counting down
       def run(self):
          while self._remaining_seconds > 0:
             time.sleep(1)
             self._remaining_seconds -= 1
-      # Get current time
       def get_current_time(self):
-         return Bar.Timer._to_string(self._remaining_seconds)
+         return self._to_string(self._remaining_seconds)
       def get_zero_time(self):
-         return Bar.Timer._to_string(0)
+         return self._to_string(0)
+      def get_empty_time(self):
+         time_string = self._to_string(self._remaining_seconds)
+         return ''.join(map(lambda x: ' ', time_string))
 
    FRAME_CHAR_STAGES = {
       'block': ['\u258F', '\u258E', '\u258D', '\u258C', 
@@ -173,14 +155,17 @@ class Bar(object):
    REMAINING_CHAR = ' '
 
    def __init__(self, duration, frame_char_type='block', length=80):
+      threading.Thread.__init__(self)
       # Duration
       self._total_seconds = duration
       self._timer = Bar.Timer(duration)
       self._time_up = False
+      self._done = False
       # Frames
       self._total_frames = length - 2 - len(self._timer.get_current_time())
       self._current_frame = 1
       self._frame_stack = ''
+      self._bar = Bar.REMAINING_CHAR*self._total_frames
       # Stages
       frame_stages = Bar.FRAME_CHAR_STAGES[frame_char_type]
       self._stage_in_cycle = itertools.cycle(frame_stages)
@@ -196,6 +181,34 @@ class Bar(object):
    def _notify(self):
       self._time_up = True
 
+   # Return done status
+   def _get_done(self):
+      return self._done
+
+   # Return complete bar for updater
+   def _get_bar(self):
+      return self._bar
+
+   # Continuously update bar until done
+   def _update_bar(self):
+      last = False
+      while True:
+         bar = self._get_bar()
+         time = self._timer.get_current_time() if not last else \
+            self._timer.get_zero_time()
+         sys.stdout.write('{}{}{}{}'.format(
+            Bar.BORDER_CHAR, 
+            bar,
+            Bar.BORDER_CHAR,
+            time))
+         sys.stdout.write('\r')
+         sys.stdout.flush()
+         if last:
+            sys.stdout.write('\b\n')
+            break
+         if self._get_done():
+            last = True
+
    # Start progress bar
    def start(self):
       # Start timer thread
@@ -206,6 +219,9 @@ class Bar(object):
       with cursor.HiddenCursor():
          first_stage_now = True
          remaining_frames = self._total_frames - self._current_frame
+         # Start update bar thread 
+         updater = threading.Thread(target=self._update_bar)
+         updater.start()
          while self._current_frame <= self._total_frames:
             # Add frames stage by stage smoothly, if there is still time
             if not self._time_up:
@@ -217,13 +233,7 @@ class Bar(object):
                   time.sleep(self._normal_gap)
                # Update bar
                current_stage = next(self._stage_in_cycle)
-               print('{}{}{}{}{}{}'.format(
-                  Bar.BORDER_CHAR, 
-                  self._frame_stack,
-                  current_stage,
-                  Bar.REMAINING_CHAR*remaining_frames,
-                  Bar.BORDER_CHAR,
-                  self._timer.get_current_time()), end='\r', flush=True)
+               self._bar = self._frame_stack + current_stage + Bar.REMAINING_CHAR*remaining_frames
                # Update frame stack when the current frame is complete
                # Move on to next frame
                if current_stage == self._last_stage:
@@ -232,10 +242,19 @@ class Bar(object):
                   remaining_frames -= 1
             # Fill in remaining frames immediately, if time is up
             else:
-               print('{}{}{}{}'.format(
-                  Bar.BORDER_CHAR, 
-                  self._last_stage*self._total_frames,                  
-                  Bar.BORDER_CHAR,
-                  self._timer.get_zero_time()), end='\r', flush=True)     
-               break          
-         print()
+               self._bar = self._last_stage*self._total_frames
+               break
+         self._done = True
+
+def _notify():
+   def _beep():
+      print('\a', end='', flush=True)
+   message = 'Ctrl-C to stop.'
+   print(message)
+   while True:
+      try:
+         _beep()
+         time.sleep(0.5)
+      except KeyboardInterrupt:
+         print('', end='\r\033[1A')
+         break
