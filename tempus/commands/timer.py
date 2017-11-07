@@ -32,6 +32,7 @@ def execute(duration):
    seconds = _to_seconds(duration)
    Bar(seconds).start()
 
+   print('Done!')
 
    # # Countdown
    # print(_time_box(total_seconds))
@@ -117,15 +118,50 @@ class Bar(object):
    '''
    Class for progress bar
    '''
+
+   class Updater(threading.Thread):
+      '''
+      Class to continuously update bar until done
+      '''
+      def __init__(self, bar, timer):
+         threading.Thread.__init__(self)
+         self._bar = bar
+         self._timer = timer
+         self._stop_now = False
+      def run(self):
+         last = False
+         while True:
+            if self._stop_now:
+               break
+            bar = self._bar._get_bar()
+            time = self._timer.get_current_time() if not last else \
+               self._timer.get_zero_time()
+            sys.stdout.write('{}{}{}{}'.format(
+               Bar.BORDER_CHAR, 
+               bar,
+               Bar.BORDER_CHAR,
+               time))
+            sys.stdout.write('\r')
+            sys.stdout.flush()
+            if last:
+               sys.stdout.write('\b\n')
+               break
+            if self._bar._get_done():
+               last = True
+      def stop(self):
+         self._stop_now = True
+
    class Timer(threading.Thread):
       '''
       Class to update time remaining
       '''
-      def __init__(self, starting_seconds):
+      def __init__(self, starting_seconds, bar):
          threading.Thread.__init__(self)
          self._initial_length = 0
          self._initial_length = len(self._to_string(starting_seconds))
          self._remaining_seconds = starting_seconds
+         self._bar = bar
+         self._stop_now = False
       # Convert seconds to string
       def _to_string(self, seconds):
          m, s = divmod(seconds, 60)
@@ -137,8 +173,13 @@ class Bar(object):
       # Start counting down
       def run(self):
          while self._remaining_seconds > 0:
+            if self._stop_now:
+               break
             time.sleep(1)
             self._remaining_seconds -= 1
+         self._bar.notify()
+      def stop(self):
+         self._stop_now = True
       def get_current_time(self):
          return self._to_string(self._remaining_seconds)
       def get_zero_time(self):
@@ -157,11 +198,12 @@ class Bar(object):
    def __init__(self, duration, frame_char_type='block', length=80):
       threading.Thread.__init__(self)
       # Duration
+      self._timer = Bar.Timer(duration, self)
       self._total_seconds = duration
-      self._timer = Bar.Timer(duration)
       self._time_up = False
       self._done = False
       # Frames
+      self._updater = Bar.Updater(self, self._timer)
       self._total_frames = length - 2 - len(self._timer.get_current_time())
       self._current_frame = 1
       self._frame_stack = ''
@@ -177,10 +219,6 @@ class Bar(object):
       self._first_gap = \
          self._total_seconds - total_gaps*self._normal_gap + self._normal_gap
 
-   # Receive notification that time is up
-   def _notify(self):
-      self._time_up = True
-
    # Return done status
    def _get_done(self):
       return self._done
@@ -189,62 +227,49 @@ class Bar(object):
    def _get_bar(self):
       return self._bar
 
-   # Continuously update bar until done
-   def _update_bar(self):
-      last = False
-      while True:
-         bar = self._get_bar()
-         time = self._timer.get_current_time() if not last else \
-            self._timer.get_zero_time()
-         sys.stdout.write('{}{}{}{}'.format(
-            Bar.BORDER_CHAR, 
-            bar,
-            Bar.BORDER_CHAR,
-            time))
-         sys.stdout.write('\r')
-         sys.stdout.flush()
-         if last:
-            sys.stdout.write('\b\n')
-            break
-         if self._get_done():
-            last = True
-
    # Start progress bar
    def start(self):
-      # Start timer thread
-      self._timer.start()
-      # Start notifier thread
-      # Notify that time is up after duration expires
-      threading.Timer(self._total_seconds, lambda: self._notify()).start()
       with cursor.HiddenCursor():
          first_stage_now = True
          remaining_frames = self._total_frames - self._current_frame
-         # Start update bar thread 
-         updater = threading.Thread(target=self._update_bar)
-         updater.start()
-         while self._current_frame <= self._total_frames:
-            # Add frames stage by stage smoothly, if there is still time
-            if not self._time_up:
-               # Sleep between stages
-               if first_stage_now:
-                  time.sleep(self._first_gap)
-                  first_stage_now = False
+         try:
+            # Start timer and updater threads
+            self._timer.start()
+            self._updater.start()
+            while self._current_frame <= self._total_frames:
+               # Add frames stage by stage smoothly, if there is still time
+               if not self._time_up:
+                  # Sleep between stages
+                  if first_stage_now:
+                     time.sleep(self._first_gap)
+                     first_stage_now = False
+                  else:
+                     time.sleep(self._normal_gap)
+                  # Update bar
+                  current_stage = next(self._stage_in_cycle)
+                  self._bar = self._frame_stack + current_stage + \
+                     Bar.REMAINING_CHAR*remaining_frames
+                  # Update frame stack when the current frame is complete
+                  # Move on to next frame
+                  if current_stage == self._last_stage:
+                     self._frame_stack += self._last_stage
+                     self._current_frame += 1
+                     remaining_frames -= 1
+               # Fill in remaining frames immediately, if time is up
                else:
-                  time.sleep(self._normal_gap)
-               # Update bar
-               current_stage = next(self._stage_in_cycle)
-               self._bar = self._frame_stack + current_stage + Bar.REMAINING_CHAR*remaining_frames
-               # Update frame stack when the current frame is complete
-               # Move on to next frame
-               if current_stage == self._last_stage:
-                  self._frame_stack += self._last_stage
-                  self._current_frame += 1
-                  remaining_frames -= 1
-            # Fill in remaining frames immediately, if time is up
-            else:
-               self._bar = self._last_stage*self._total_frames
-               break
-         self._done = True
+                  self._bar = self._last_stage*self._total_frames
+                  break
+         except KeyboardInterrupt:
+            # Stop timer and updater threads first
+            self._timer.stop()
+            self._updater.stop()
+            sys.exit()
+         finally:
+            self._done = True
+
+   # Receive notification that time is up
+   def notify(self):
+      self._time_up = True
 
 def _notify():
    def _beep():
