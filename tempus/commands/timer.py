@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+
+from __future__ import unicode_literals
 from click import command, argument
 import cursor
 import time
@@ -168,7 +171,6 @@ class Bar(object):
    FRAME_CHAR_STAGES = {
       'block': [' ', '▏', '▎', '▍', '▌', '▋', '▊', '▉', '█'],
       'dots': ['⡀', '⡄', '⡆', '⡇', '⣇', '⣧', '⣷', '⣿']
-
    }
    BORDER_CHAR = '|'
    REMAINING_CHAR = ' '
