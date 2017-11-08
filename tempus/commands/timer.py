@@ -28,33 +28,14 @@ def execute(duration):
       sys.exit()      
 
    # Start timer bar
-   seconds = _to_seconds(duration)
-   Bar(seconds).start()
+   input('[Enter to start]')
+   print()
+   Bar(_to_seconds(duration)).start()
+   print()
 
-   # # Countdown
-   # print(_time_box(total_seconds))
-   # message = 'Enter to start. Ctrl-C to stop.'
-   # input(message)
-   # print('', end='\r\033[4A')
-   # stopped = False
-   # with cursor.HiddenCursor(): 
-   #    for i in range(int(total_seconds), 0, -1):
-   #       try:
-   #          print(_time_box(i))
-   #          print(' '*len(message))
-   #          time.sleep(1)
-   #       except KeyboardInterrupt:
-   #          stopped = True
-   #          break
-   #       finally:
-   #          print('', end='\r\033[4A')
-   # # Done countdown
-   # if not stopped:  
-   #    print(_time_box(0))
-   #    _notify()
-   # else:
-   #     print('\n'*2)
-   # print('Stopped.'+' '*len(message))
+   # Ring bell
+   _ring_bell('[Ctrl-C to stop]')
+   sys.exit()
    
 
 def _syntax_valid(ds, r=DURATION_REGEX):
@@ -130,21 +111,23 @@ class Bar(object):
          while True:
             if self._stop_now:
                break
+            if self._bar._get_done():
+               last = True
             bar = self._bar._get_bar()
             time = self._timer.get_current_time() if not last else \
                self._timer.get_zero_time()
-            sys.stdout.write('{}{}{}{}'.format(
+            sys.stdout.write('{}{}{} {} {}'.format(
                Bar.BORDER_CHAR, 
                bar,
                Bar.BORDER_CHAR,
-               time))
+               time,
+               Bar.BORDER_CHAR))
             sys.stdout.write('\r')
             sys.stdout.flush()
             if last:
-               sys.stdout.write('\b\n')
+               sys.stdout.write('\n')
+               sys.stdout.flush()
                break
-            if self._bar._get_done():
-               last = True
       def stop(self):
          self._stop_now = True
 
@@ -181,13 +164,11 @@ class Bar(object):
          return self._to_string(self._remaining_seconds)
       def get_zero_time(self):
          return self._to_string(0)
-      def get_empty_time(self):
-         time_string = self._to_string(self._remaining_seconds)
-         return ''.join(map(lambda x: ' ', time_string))
 
    FRAME_CHAR_STAGES = {
-      'block': ['\u258F', '\u258E', '\u258D', '\u258C', 
-                '\u258B', '\u258A', '\u2589', '\u2588']
+      'block': [' ', '▏', '▎', '▍', '▌', '▋', '▊', '▉', '█'],
+      'dots': ['⡀', '⡄', '⡆', '⡇', '⣇', '⣧', '⣷', '⣿']
+
    }
    BORDER_CHAR = '|'
    REMAINING_CHAR = ' '
@@ -201,7 +182,7 @@ class Bar(object):
       self._done = False
       # Frames
       self._updater = Bar.Updater(self, self._timer)
-      self._total_frames = length - 2 - len(self._timer.get_current_time())
+      self._total_frames = length - 5 - len(self._timer.get_current_time())
       self._current_frame = 1
       self._frame_stack = ''
       self._bar = Bar.REMAINING_CHAR*self._total_frames
@@ -214,15 +195,15 @@ class Bar(object):
       total_gaps = self._total_frames*stages_per_frame - 1
       self._normal_gap = truncate(self._total_seconds/total_gaps, 5)
       self._first_gap = \
-         self._total_seconds - total_gaps*self._normal_gap + self._normal_gap
-
-   # Return done status
-   def _get_done(self):
-      return self._done
+         self._total_seconds - total_gaps*self._normal_gap + self._normal_gap    
 
    # Return complete bar for updater
    def _get_bar(self):
       return self._bar
+
+   # Return done status
+   def _get_done(self):
+      return self._done
 
    # Start progress bar
    def start(self):
@@ -256,27 +237,30 @@ class Bar(object):
                else:
                   self._bar = self._last_stage*self._total_frames
                   break
+            self._done = True
          except KeyboardInterrupt:
             # Stop timer and updater threads first
             self._timer.stop()
             self._updater.stop()
             sys.exit()
-         finally:
-            self._done = True
 
    # Receive notification that time is up
    def notify(self):
       self._time_up = True
 
-def _notify():
+def _ring_bell(message, frequency=0.5):
    def _beep():
       print('\a', end='', flush=True)
-   message = 'Ctrl-C to stop.'
-   print(message)
+   first_ring = True
    while True:
       try:
+         if first_ring:
+            # Buffer time to let updater thread finish
+            time.sleep(0.1)
+            print(message, end='')
+            first_ring = False
          _beep()
-         time.sleep(0.5)
+         time.sleep(frequency)
       except KeyboardInterrupt:
-         print('', end='\r\033[1A')
+         print()
          break
