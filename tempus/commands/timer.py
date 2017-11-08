@@ -239,10 +239,13 @@ class Bar(object):
                   break
             self._done = True
          except KeyboardInterrupt:
-            # Stop timer and updater threads first
+            # Stop threads
             self._timer.stop()
             self._updater.stop()
             sys.exit()
+         # Wait for threads to finish
+         self._timer.join()
+         self._updater.join()
 
    # Receive notification that time is up
    def notify(self):
@@ -255,8 +258,6 @@ def _ring_bell(message, frequency=0.5):
    while True:
       try:
          if first_ring:
-            # Buffer time to let updater thread finish
-            time.sleep(0.1)
             print(message, end='')
             first_ring = False
          _beep()
