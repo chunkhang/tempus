@@ -11,7 +11,7 @@ import itertools
 from .. import constant
 from ..utils import truncate, terminal_size
 
-@command('timer', short_help='use timer')
+@command('timer', short_help='use timer tool')
 @argument('duration')
 def execute(duration):
 
@@ -19,8 +19,8 @@ def execute(duration):
    size = terminal_size()
    minimum = constant.TERMINAL_MINIMUM_SIZE
    if not all(map(lambda x, y: x >= y, size, minimum)):
-      print('The terminal is too small: {}x{}'.format(size[0], size[1]))
-      print('It needs to be at least  : {}x{}'.format(minimum[0], minimum[1]))
+      print('The terminal is too small: {} x {}'.format(size[0], size[1]))
+      print('It needs to be at least  : {} x {}'.format(minimum[0], minimum[1]))
       sys.exit()
 
    # Check duration syntax
@@ -37,13 +37,13 @@ def execute(duration):
       sys.exit()      
 
    # Start timer bar
-   input('Enter to start...')
+   input('<Enter> to start')
    print()
    Bar(_to_seconds(duration)).start()
    print()
 
    # Ring bell
-   _ring_bell('Ctrl-C to stop...')
+   _ring_bell('<Ctrl-C> to stop')
    sys.exit()
    
 
