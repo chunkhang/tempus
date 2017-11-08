@@ -45,15 +45,8 @@ def test_invalid_duration():
    assert timer._values_valid((None, 0)) == False
    assert timer._values_valid((None, None)) == False
 
-def test_safe_duration():
-   assert timer._safe_duration((12, 20)) == (12, 20)
-   assert timer._safe_duration((0, 0)) == (0, 0)
-   assert timer._safe_duration((12, None)) == (12, 0)
-   assert timer._safe_duration((None, 20)) == (0, 20)
-   assert timer._safe_duration((None, 100)) == (1, 40)
-
 def test_time_string():
-   assert timer._time_string(0) == '0:00'
-   assert timer._time_string(20) == '0:20'
-   assert timer._time_string(720) == '12:00'
-   assert timer._time_string(721) == '12:01'
+   assert timer.Bar.Timer(0, None)._to_string(0) == '0:00'
+   assert timer.Bar.Timer(20, None)._to_string(20) == '0:20'
+   assert timer.Bar.Timer(720, None)._to_string(720) == '12:00'
+   assert timer.Bar.Timer(721, None)._to_string(721) == '12:01'
