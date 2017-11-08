@@ -12,7 +12,7 @@ $ pip install tempus
 
 ## Usage
 
-#### TIMER
+### TIMER
 **tempus timer \<duration\>** <br/>
 tempus timer 1m | tempus timer 2m15s | tempus timer 30s | tempus timer 10000s
 ```
@@ -24,7 +24,7 @@ $ tempus timer 1m
 
 ## Caveats
 
-#### FONT
+### FONT
 The progress bar may appear distorted or unsmooth when filling up due to the terminal's font not displaying the unicode characters as intended. Hence, you may need to play around with your font to get the best experience.
 ```
 $ tempus test
@@ -41,7 +41,7 @@ https://github.com/chunkhang/tempus/#font
 **Recommended** <br/>
 Menlo | SF Mono <br/>
 
-#### TERMINAL
+### TERMINAL
 The progress bar needs a certain amount of space to ensure proper printing. Therefore, you may get a message if your terminal size is too small. In that case, just adjust your terminal's window before executing the command again.
 ```
 $ tempus timer 1m
