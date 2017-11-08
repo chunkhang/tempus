@@ -17,7 +17,7 @@ $ pip install tempus
 tempus timer 1m | tempus timer 2m15s | tempus timer 30s | tempus timer 10000s
 ```
 $ tempus timer 1m
-Enter to start...
+<Enter> to start
 
 |█████████████████████████████████▌                                     | 0:32 |
 ```
