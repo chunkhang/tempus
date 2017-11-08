@@ -1,4 +1,4 @@
-# TEMPUS [![PyPI](https://img.shields.io/pypi/v/tempus.svg)](https://pypi.python.org/pypi/tempus) [![Travis](https://img.shields.io/travis/chunkhang/tempus.svg)](https://travis-ci.org/chunkhang/tempus)
+# Tempus [![PyPI](https://img.shields.io/pypi/v/tempus.svg)](https://pypi.python.org/pypi/tempus) [![Travis](https://img.shields.io/travis/chunkhang/tempus.svg)](https://travis-ci.org/chunkhang/tempus)
 
 <img src="https://images.unsplash.com/photo-1501139083538-0139583c060f?auto=format&fit=crop&w=1950&q=60&ixid=dW5zcGxhc2guY29tOzs7Ozs%3D" alt="Hourglass" width=400/><br/>
 ***TEMPUS EST DE ESSENTIA*** <br/>
