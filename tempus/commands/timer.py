@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import unicode_literals
 from click import command, argument
 import cursor
 import time
@@ -9,13 +8,20 @@ import sys
 import threading
 import itertools
 
-from ..utils import truncate
-
-DURATION_REGEX = '^(([0-9]+)m)?(([0-9]+)s)?$'
+from .. import constant
+from ..utils import truncate, terminal_size
 
 @command('timer', short_help='use timer')
 @argument('duration')
 def execute(duration):
+
+   # Check if terminal is at least minimum size
+   size = terminal_size()
+   minimum = constant.TERMINAL_MINIMUM_SIZE
+   if not all(map(lambda x, y: x >= y, size, minimum)):
+      print('The terminal is too small: {}x{}'.format(size[0], size[1]))
+      print('It needs to be at least  : {}x{}'.format(minimum[0], minimum[1]))
+      sys.exit()
 
    # Check duration syntax
    if _syntax_valid(duration):
@@ -31,17 +37,17 @@ def execute(duration):
       sys.exit()      
 
    # Start timer bar
-   input('[Enter to start]')
+   input('Enter to start...')
    print()
    Bar(_to_seconds(duration)).start()
    print()
 
    # Ring bell
-   _ring_bell('[Ctrl-C to stop]')
+   _ring_bell('Ctrl-C to stop...')
    sys.exit()
    
 
-def _syntax_valid(ds, r=DURATION_REGEX):
+def _syntax_valid(ds, r=constant.DURATION_REGEX):
    '''
    -> boolean: True - valid syntax
    -> boolean: False - invalid syntax
@@ -52,7 +58,7 @@ def _syntax_valid(ds, r=DURATION_REGEX):
    else:
       return False
 
-def _to_duration(ds, r=DURATION_REGEX):
+def _to_duration(ds, r=constant.DURATION_REGEX):
    '''
    -> tuple: (int/None, int/None) - (minutes, seconds)
    '''
@@ -120,11 +126,11 @@ class Bar(object):
             time = self._timer.get_current_time() if not last else \
                self._timer.get_zero_time()
             sys.stdout.write('{}{}{} {} {}'.format(
-               Bar.BORDER_CHAR, 
+               constant.BORDER_CHAR, 
                bar,
-               Bar.BORDER_CHAR,
+               constant.BORDER_CHAR,
                time,
-               Bar.BORDER_CHAR))
+               constant.BORDER_CHAR))
             sys.stdout.write('\r')
             sys.stdout.flush()
             if last:
@@ -168,13 +174,6 @@ class Bar(object):
       def get_zero_time(self):
          return self._to_string(0)
 
-   FRAME_CHAR_STAGES = {
-      'block': [' ', '▏', '▎', '▍', '▌', '▋', '▊', '▉', '█'],
-      'dots': ['⡀', '⡄', '⡆', '⡇', '⣇', '⣧', '⣷', '⣿']
-   }
-   BORDER_CHAR = '|'
-   REMAINING_CHAR = ' '
-
    def __init__(self, duration, frame_char_type='block', length=80):
       threading.Thread.__init__(self)
       # Duration
@@ -187,9 +186,9 @@ class Bar(object):
       self._total_frames = length - 5 - len(self._timer.get_current_time())
       self._current_frame = 1
       self._frame_stack = ''
-      self._bar = Bar.REMAINING_CHAR*self._total_frames
+      self._bar = constant.REMAINING_CHAR*self._total_frames
       # Stages
-      frame_stages = Bar.FRAME_CHAR_STAGES[frame_char_type]
+      frame_stages = constant.FRAME_CHAR_STAGES[frame_char_type]
       self._stage_in_cycle = itertools.cycle(frame_stages)
       self._last_stage = frame_stages[-1]
       # Gaps (In seconds)
@@ -228,7 +227,7 @@ class Bar(object):
                   # Update bar
                   current_stage = next(self._stage_in_cycle)
                   self._bar = self._frame_stack + current_stage + \
-                     Bar.REMAINING_CHAR*remaining_frames
+                     constant.REMAINING_CHAR*remaining_frames
                   # Update frame stack when the current frame is complete
                   # Move on to next frame
                   if current_stage == self._last_stage:
