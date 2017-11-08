@@ -5,7 +5,6 @@ import re
 import sys
 import threading
 import itertools
-import queue
 
 from ..utils import truncate
 
@@ -31,8 +30,6 @@ def execute(duration):
    # Start timer bar
    seconds = _to_seconds(duration)
    Bar(seconds).start()
-
-   print('Done!')
 
    # # Countdown
    # print(_time_box(total_seconds))
