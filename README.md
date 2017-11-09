@@ -22,6 +22,14 @@ $ tempus timer 1m
 |█████████████████████████████████▌                                     | 0:32 |
 ```
 
+### Stopwatch
+
+Coming soon
+
+### Metronome
+
+Coming soon
+
 ## CAVEATS
 
 ### Font

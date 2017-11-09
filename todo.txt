@@ -1,11 +1,9 @@
 1. Timer
-- Pause
-- Continue
+- Pause / Resume
+- Repeating (tempus timer -r/--repeat 30s)
+- Save duration with keywords (tempus timer egg)
+- Infer duration with time (tempus timer 6pm , tempus timer 7.30am )
 
 2. Stopwatch
-- Start
-- Lap
-- Stop
 
-2. Metronome
-- Set bpm
+3. Metronome
