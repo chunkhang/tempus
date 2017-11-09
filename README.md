@@ -16,13 +16,8 @@ $ pip install tempus
 
 ### Timer
 **tempus timer \<duration\>** <br/>
-tempus timer 1m | tempus timer 2m15s | tempus timer 30s | tempus timer 10000s
-```
-$ tempus timer 1m
-<Enter> to start
-
-|█████████████████████████████████▌                                     | 0:32 |
-```
+tempus timer 1m | tempus timer 2m15s | tempus timer 30s | tempus timer 10000s <br/><br/>
+![Tempus Timer](https://user-images.githubusercontent.com/12708862/32622525-188160a2-c5be-11e7-937d-6eb5c8209a22.gif)
 
 ### Stopwatch
 
