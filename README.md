@@ -9,6 +9,8 @@
 ```
 $ pip install tempus
 ```
+**Python Versions** <br/>
+3.3 | 3.4 | 3.5 | 3.6
 
 ## USAGE
 
