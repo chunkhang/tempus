@@ -1,0 +1,10 @@
+1.0.0
+-----
+- Initial release
+
+1.1.0
+-----
+- Added progress bar for timer
+- Added test command
+- Added utils module with test
+- Updated readme significantly
